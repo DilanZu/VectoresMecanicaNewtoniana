@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyección y Aceleración de Vectores</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+    </script>
+</head>
+<body>
+
+    <header>
+         <h1>Proyeccion de un Vector sobre la linea de acción de otro Vector</h1>
+                <p>Calcula y visualiza la proyección de vectores en 3D.</p>
+    </header>
+
+    <main>
+        <section class="input-section">
+            <div class="vector-input-group">
+                <div class="vector-input-header">
+                    <h3>Vector A</h3>
+                    <div class="input-mode-selector">
+                        <label>
+                            <input type="radio" name="input-mode-a" value="cartesianas" checked>
+                            Cartesianas
+                        </label>
+                        <label>
+                            <input type="radio" name="input-mode-a" value="angulos">
+                            Ángulos
+                        </label>
+                    </div>
+                </div>
+                <div id="cartesianas-input-a" class="vector-input">
+                    <label for="ax">Coordenada x:</label>
+                    <input type="number" id="ax" placeholder="Ej: 3">
+                    <label for="ay">Coordenada y:</label>
+                    <input type="number" id="ay" placeholder="Ej: 4">
+                    <label for="az">Coordenada z:</label>
+                    <input type="number" id="az" placeholder="Ej: 5">
+                </div>
+                <div id="angulos-input-a" class="vector-input" style="display:none;">
+                    <label for="a-magnitud">Magnitud (opcional):</label>
+                    <input type="number" id="a-magnitud" placeholder="Ej: 5">
+                    <label for="a-alpha">Ángulo α (grados):</label>
+                    <input type="number" id="a-alpha" placeholder="Ej: 30">
+                    <label for="a-beta">Ángulo β (grados):</label>
+                    <input type="number" id="a-beta" placeholder="Ej: 60">
+                    <label for="a-gamma">Ángulo γ (opcional, grados):</label>
+                    <input type="number" id="a-gamma" placeholder="Ej: 90">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="a-cos-gamma-neg"> cos γ < 0
+                    </label>
+                </div>
+            </div>
+
+            <div class="vector-input-group">
+                <div class="vector-input-header">
+                    <h3>Vector B</h3>
+                    <div class="input-mode-selector">
+                        <label>
+                            <input type="radio" name="input-mode-b" value="cartesianas" checked>
+                            Cartesianas
+                        </label>
+                        <label>
+                            <input type="radio" name="input-mode-b" value="angulos">
+                            Ángulos
+                        </label>
+                    </div>
+                </div>
+                <div id="cartesianas-input-b" class="vector-input">
+                    <label for="bx">Coordenada x:</label>
+                    <input type="number" id="bx" placeholder="Ej: 1">
+                    <label for="by">Coordenada y:</label>
+                    <input type="number" id="by" placeholder="Ej: 2">
+                    <label for="bz">Coordenada z:</label>
+                    <input type="number" id="bz" placeholder="Ej: 3">
+                </div>
+                <div id="angulos-input-b" class="vector-input" style="display:none;">
+                    <label for="b-magnitud">Magnitud (opcional):</label>
+                    <input type="number" id="b-magnitud" placeholder="Ej: 3">
+                    <label for="b-alpha">Ángulo α (grados):</label>
+                    <input type="number" id="b-alpha" placeholder="Ej: 45">
+                    <label for="b-beta">Ángulo β (grados):</label>
+                    <input type="number" id="b-beta" placeholder="Ej: 90">
+                    <label for="b-gamma">Ángulo γ (opcional, grados):</label>
+                    <input type="number" id="b-gamma" placeholder="Ej: 45">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="b-cos-gamma-neg"> cos γ < 0
+                    </label>
+                </div>
+            </div>
+
+            <div class="projection-choice">
+                <h3>Selecciona la Proyección</h3>
+                <label>
+                    <input type="radio" name="projection-order" value="a_on_b" checked>
+                    Proyectar A sobre B
+                </label>
+                <label>
+                    <input type="radio" name="projection-order" value="b_on_a">
+                    Proyectar B sobre A
+                </label>
+            </div>
+
+            <button id="calculate-btn">Calcular Proyección</button>
+        </section>
+
+        <section class="output-section">
+            <div id="results">
+                <h3>Resultados</h3>
+                <p><span id="projection-label">Proyección de A sobre B:</span> <span id="projection-vector"></span></p>
+                <p><span class="hover-info" title="La magnitud es la longitud del vector. Se calcula como la raíz cuadrada de la suma de los cuadrados de sus componentes. Si se tienen los ángulos directores (α, β, γ), y la magnitud |V|, las componentes son (|V|cos(α), |V|cos(β), |V|cos(γ)).">Magnitud:</span> <span id="projection-magnitude"></span></p>
+                <div id="calculation-process">
+                    <h4>Proceso de Cálculo:</h4>
+                    <p id="step1" class="formula"></p>
+                    <p id="step2" class="formula"></p>
+                    <p id="step3" class="formula"></p>
+                </div>
+            </div>
+            <div class="visualization-container">
+                <canvas id="vector-canvas" width="600" height="400"></canvas>
+            </div>
+        </section>
+
+        <header>
+            <h2>Cálculo de Aceleración Normal y Tangencial</h2>
+            <p>Introduce la aceleración total (A) y la velocidad (V).</p>
+        </header>
+        <section class="input-section">
+            <div class="vector-input-group">
+                <div class="vector-input-header">
+                    <h3>Aceleración (A)</h3>
+                    <div class="input-mode-selector">
+                        <label>
+                            <input type="radio" name="input-mode-accel" value="cartesianas" checked>
+                            Cartesianas
+                        </label>
+                        <label>
+                            <input type="radio" name="input-mode-accel" value="angulos">
+                            Ángulos
+                        </label>
+                    </div>
+                </div>
+                <div id="cartesianas-input-accel" class="vector-input">
+                    <label for="accel-x">Coordenada x:</label>
+                    <input type="number" id="accel-x" placeholder="Ej: 2">
+                    <label for="accel-y">Coordenada y:</label>
+                    <input type="number" id="accel-y" placeholder="Ej: 3">
+                    <label for="accel-z">Coordenada z:</label>
+                    <input type="number" id="accel-z" placeholder="Ej: 0">
+                </div>
+                <div id="angulos-input-accel" class="vector-input" style="display:none;">
+                    <label for="accel-magnitud">Magnitud (opcional):</label>
+                    <input type="number" id="accel-magnitud" placeholder="Ej: 5">
+                    <label for="accel-alpha">Ángulo α (grados):</label>
+                    <input type="number" id="accel-alpha" placeholder="Ej: 30">
+                    <label for="accel-beta">Ángulo β (grados):</label>
+                    <input type="number" id="accel-beta" placeholder="Ej: 60">
+                    <label for="accel-gamma">Ángulo γ (opcional, grados):</label>
+                    <input type="number" id="accel-gamma" placeholder="Ej: 90">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="accel-cos-gamma-neg"> cos γ < 0
+                    </label>
+                </div>
+            </div>
+
+            <div class="vector-input-group">
+                <div class="vector-input-header">
+                    <h3>Velocidad (V)</h3>
+                    <div class="input-mode-selector">
+                        <label>
+                            <input type="radio" name="input-mode-vel" value="cartesianas" checked>
+                            Cartesianas
+                        </label>
+                        <label>
+                            <input type="radio" name="input-mode-vel" value="angulos">
+                            Ángulos
+                        </label>
+                    </div>
+                </div>
+                <div id="cartesianas-input-vel" class="vector-input">
+                    <label for="vel-x">Coordenada x:</label>
+                    <input type="number" id="vel-x" placeholder="Ej: 4">
+                    <label for="vel-y">Coordenada y:</label>
+                    <input type="number" id="vel-y" placeholder="Ej: 1">
+                    <label for="vel-z">Coordenada z:</label>
+                    <input type="number" id="vel-z" placeholder="Ej: 0">
+                </div>
+                <div id="angulos-input-vel" class="vector-input" style="display:none;">
+                    <label for="vel-magnitud">Magnitud (opcional):</label>
+                    <input type="number" id="vel-magnitud" placeholder="Ej: 4">
+                    <label for="vel-alpha">Ángulo α (grados):</label>
+                    <input type="number" id="vel-alpha" placeholder="Ej: 45">
+                    <label for="vel-beta">Ángulo β (grados):</label>
+                    <input type="number" id="vel-beta" placeholder="Ej: 90">
+                    <label for="vel-gamma">Ángulo γ (opcional, grados):</label>
+                    <input type="number" id="vel-gamma" placeholder="Ej: 45">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="vel-cos-gamma-neg"> cos γ < 0
+                    </label>
+                </div>
+            </div>
+
+            <button id="calculate-accel-btn">Calcular Aceleraciones</button>
+        </section>
+
+        <section class="output-section">
+            <div id="accel-results">
+                <h3>Resultados de Aceleración</h3>
+                <p>Aceleración Tangencial ($$\vec{a}_t$$): <span id="at-vector"></span></p>
+                <p><span class="hover-info" title="La magnitud es la longitud del vector. Se calcula como la raíz cuadrada de la suma de los cuadrados de sus componentes. Si se tienen los ángulos directores (α, β, γ), y la magnitud |V|, las componentes son (|V|cos(α), |V|cos(β), |V|cos(γ)).">Magnitud ($$|\vec{a}_t|$$):</span> <span id="at-magnitude"></span></p>
+                <p>Aceleración Normal ($$\vec{a}_n$$): <span id="an-vector"></span></p>
+                <p><span class="hover-info" title="La magnitud es la longitud del vector. Se calcula como la raíz cuadrada de la suma de los cuadrados de sus componentes. Si se tienen los ángulos directores (α, β, γ), y la magnitud |V|, las componentes son (|V|cos(α), |V|cos(β), |V|cos(γ)).">Magnitud ($$|\vec{a}_n|$$):</span> <span id="an-magnitude"></span></p>
+            </div>
+            <div class="visualization-container">
+                <canvas id="accel-canvas" width="600" height="400"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
