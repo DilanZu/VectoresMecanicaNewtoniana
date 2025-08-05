@@ -149,12 +149,24 @@ document.addEventListener('DOMContentLoaded', () => {
         let maxComponent = 0;
         vectors.forEach(v => {
             if (v) {
-                maxComponent = Math.max(maxComponent, Math.abs(v.x), Math.abs(v.y));
+                maxComponent = Math.max(maxComponent, Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
             }
         });
         if (maxComponent === 0) return 1;
         const scale = Math.min(canvasWidth / (2 * maxComponent), canvasHeight / (2 * maxComponent));
         return scale * 0.8; 
+    }
+
+    // NUEVA FUNCION: Proyección de coordenadas 3D a 2D (isométrica simple)
+    function projectTo2D(x, y, z, scale) {
+        const angle = Math.PI / 6; // Ángulo de proyección (30 grados)
+        const cosAngle = Math.cos(angle);
+        const sinAngle = Math.sin(angle);
+        
+        const xPrime = (x * cosAngle - z * cosAngle) * scale;
+        const yPrime = (y * cosAngle + x * sinAngle + z * sinAngle) * -1 * scale; // Y es negativo en el canvas
+        
+        return { x: xPrime, y: yPrime };
     }
 
     calculateBtn.addEventListener('click', () => {
@@ -263,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             $$||${targetLabel}||^2 = (${toSignificantFigures(targetVector.x, sigFigs)})^2 + (${toSignificantFigures(targetVector.y, sigFigs)})^2 + (${toSignificantFigures(targetVector.z, sigFigs)})^2 = ${formattedMagnitudeSquared}$$`;
 
         step3P.innerHTML = `Paso 3: Usar la fórmula para encontrar las coordenadas de la proyección.
-            $$\\text{proy}_{${targetLabel}}{${sourceLabel}} = \\left(\\frac{${sourceLabel} \\cdot ${targetVector}}{||${targetVector}||^2}\\right) \\cdot ${targetVector} = \\left(\\frac{${formattedDotProduct}}{${formattedMagnitudeSquared}}\\right) \\cdot (${toSignificantFigures(targetVector.x, sigFigs)}, ${toSignificantFigures(targetVector.y, sigFigs)}, ${toSignificantFigures(targetVector.z, sigFigs)}) = (${formattedProjX}, ${formattedProjY}, ${formattedProjZ})$$`;
+            $$\\text{proy}_{${targetLabel}}{${sourceVector}} = \\left(\\frac{${sourceLabel} \\cdot ${targetVector}}{||${targetVector}||^2}\\right) \\cdot ${targetVector} = \\left(\\frac{${formattedDotProduct}}{${formattedMagnitudeSquared}}\\right) \\cdot (${toSignificantFigures(targetVector.x, sigFigs)}, ${toSignificantFigures(targetVector.y, sigFigs)}, ${toSignificantFigures(targetVector.z, sigFigs)}) = (${formattedProjX}, ${formattedProjY}, ${formattedProjZ})$$`;
 
         MathJax.typeset();
         
@@ -275,10 +287,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const scale = calculateDynamicScale([vectorA, vectorB], canvas.width, canvas.height);
         
-        drawAxes(ctx, canvas);
-        drawVector(ctx, 0, 0, vectorA.x * scale, -vectorA.y * scale, 'blue', 'Vector A');
-        drawVector(ctx, 0, 0, vectorB.x * scale, -vectorB.y * scale, 'red', 'Vector B');
-        drawVector(ctx, 0, 0, projX * scale, -projY * scale, 'green', 'Proyección');
+        drawAxes(ctx, canvas, scale);
+        
+        const projA = projectTo2D(vectorA.x, vectorA.y, vectorA.z, scale);
+        const projB = projectTo2D(vectorB.x, vectorB.y, vectorB.z, scale);
+        const projP = projectTo2D(projX, projY, projZ, scale);
+
+        drawVector(ctx, 0, 0, projA.x, projA.y, 'blue', 'Vector A');
+        drawVector(ctx, 0, 0, projB.x, projB.y, 'red', 'Vector B');
+        drawVector(ctx, 0, 0, projP.x, projP.y, 'green', 'Proyección');
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     });
 
@@ -364,11 +381,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const scale = calculateDynamicScale([vectorA, vectorV, {x: atX, y: atY, z: atZ}, {x: anX, y: anY, z: anZ}], accelCanvas.width, accelCanvas.height);
 
-        drawAxes(accelCtx, accelCanvas);
-        drawVector(accelCtx, 0, 0, vectorA.x * scale, -vectorA.y * scale, 'blue', 'Vector A');
-        drawVector(accelCtx, 0, 0, vectorV.x * scale, -vectorV.y * scale, 'red', 'Vector V');
-        drawVector(accelCtx, 0, 0, atX * scale, -atY * scale, 'green', 'Vector at');
-        drawVector(accelCtx, atX * scale, -atY * scale, anX * scale, -anY * scale, 'purple', 'Vector an');
+        drawAxes(accelCtx, accelCanvas, scale);
+        
+        const projA = projectTo2D(vectorA.x, vectorA.y, vectorA.z, scale);
+        const projV = projectTo2D(vectorV.x, vectorV.y, vectorV.z, scale);
+        const projAt = projectTo2D(atX, atY, atZ, scale);
+        const projAn = projectTo2D(anX, anY, anZ, scale);
+
+        drawVector(accelCtx, 0, 0, projA.x, projA.y, 'blue', 'Vector A');
+        drawVector(accelCtx, 0, 0, projV.x, projV.y, 'red', 'Vector V');
+        drawVector(accelCtx, 0, 0, projAt.x, projAt.y, 'green', 'Vector at');
+        
+        // El vector an se dibuja desde la punta de at para mostrar la suma de vectores
+        drawVector(accelCtx, projAt.x, projAt.y, projAt.x + projAn.x, projAt.y + projAn.y, 'purple', 'Vector an');
+        
         accelCtx.setTransform(1, 0, 0, 1, 0, 0);
     });
 
@@ -393,18 +419,35 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(label, x2 + 15 * Math.cos(angle), y2 + 15 * Math.sin(angle));
     }
 
-    function drawAxes(ctx, canvas) {
+    function drawAxes(ctx, canvas, scale) {
         ctx.strokeStyle = '#ced4da';
         ctx.lineWidth = 1;
 
+        // Eje X
         ctx.beginPath();
-        ctx.moveTo(-canvas.width / 2, 0);
-        ctx.lineTo(canvas.width / 2, 0);
+        const xPos = projectTo2D(canvas.width / (2 * scale), 0, 0, scale);
+        const xNeg = projectTo2D(-canvas.width / (2 * scale), 0, 0, scale);
+        ctx.moveTo(xNeg.x, xNeg.y);
+        ctx.lineTo(xPos.x, xPos.y);
         ctx.stroke();
+        ctx.fillText('X', xPos.x + 10, xPos.y);
 
+        // Eje Y
         ctx.beginPath();
-        ctx.moveTo(0, -canvas.height / 2);
-        ctx.lineTo(0, canvas.height / 2);
+        const yPos = projectTo2D(0, canvas.height / (2 * scale), 0, scale);
+        const yNeg = projectTo2D(0, -canvas.height / (2 * scale), 0, scale);
+        ctx.moveTo(yNeg.x, yNeg.y);
+        ctx.lineTo(yPos.x, yPos.y);
         ctx.stroke();
+        ctx.fillText('Y', yPos.x, yPos.y + 10);
+
+        // Eje Z (el nuevo)
+        ctx.beginPath();
+        const zPos = projectTo2D(0, 0, canvas.width / (4 * scale), scale);
+        const zNeg = projectTo2D(0, 0, -canvas.width / (4 * scale), scale);
+        ctx.moveTo(zPos.x, zPos.y);
+        ctx.lineTo(zNeg.x, zNeg.y);
+        ctx.stroke();
+        ctx.fillText('Z', zNeg.x, zNeg.y - 10);
     }
 });
