@@ -93,8 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return degrees * Math.PI / 180;
     }
     
+    function toDegrees(radians) {
+        return radians * 180 / Math.PI;
+    }
+
     function parseValue(value) {
-        return value.trim() === '' ? 0 : parseFloat(value);
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
     }
 
     function toSignificantFigures(num, sigFigs) {
@@ -109,17 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function calculateVectorFromAngles(magnitude, alpha, beta, gamma, cosGammaNeg) {
-        let mag = parseValue(magnitude);
-        const al = parseValue(alpha);
-        const be = parseValue(beta);
-        const gam = parseValue(gamma);
+        let mag = parseFloat(magnitude);
+        const al = parseFloat(alpha);
+        const be = parseFloat(beta);
+        const gam = parseFloat(gamma);
         
         if (isNaN(al) || isNaN(be)) {
             alert('Por favor, ingresa al menos los ángulos α y β.');
             return null;
         }
-
-        if (isNaN(mag)) {
+        
+        if (isNaN(mag) || mag < 0) {
             mag = 1;
         }
 
@@ -267,7 +272,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formattedMagnitudeSquared = toSignificantFigures(magnitudeTargetSquared, sigFigs);
         const formattedScalar = toSignificantFigures(scalar, sigFigs);
 
-        // AQUI ESTABA EL ERROR: las variables debían ser ${sourceLabel} y ${targetLabel}
         step1P.innerHTML = `Paso 1: Calcular el producto punto de ${sourceLabel} y ${targetLabel}.
             $$${sourceLabel} \\cdot ${targetLabel} = (${toSignificantFigures(sourceVector.x, sigFigs)})(${toSignificantFigures(targetVector.x, sigFigs)}) + (${toSignificantFigures(sourceVector.y, sigFigs)})(${toSignificantFigures(targetVector.y, sigFigs)}) + (${toSignificantFigures(sourceVector.z, sigFigs)})(${toSignificantFigures(targetVector.z, sigFigs)}) = ${formattedDotProduct}$$`;
         
@@ -293,9 +297,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const projB = projectTo2D(vectorB.x, vectorB.y, vectorB.z, scale);
         const projP = projectTo2D(projX, projY, projZ, scale);
 
-        drawVector(ctx, 0, 0, projA.x, projA.y, 'blue', 'Vector A');
-        drawVector(ctx, 0, 0, projB.x, projB.y, 'red', 'Vector B');
-        drawVector(ctx, 0, 0, projP.x, projP.y, 'green', 'Proyección');
+        drawVector(ctx, 0, 0, projA.x, projA.y, 'blue', 'Vector A', vectorA, scale);
+        drawVector(ctx, 0, 0, projB.x, projB.y, 'red', 'Vector B', vectorB, scale);
+        drawVector(ctx, 0, 0, projP.x, projP.y, 'green', 'Proyección', {x: projX, y: projY, z: projZ}, scale);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     });
 
@@ -388,16 +392,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const projAt = projectTo2D(atX, atY, atZ, scale);
         const projAn = projectTo2D(anX, anY, anZ, scale);
 
-        drawVector(accelCtx, 0, 0, projA.x, projA.y, 'blue', 'Vector A');
-        drawVector(accelCtx, 0, 0, projV.x, projV.y, 'red', 'Vector V');
-        drawVector(accelCtx, 0, 0, projAt.x, projAt.y, 'green', 'Vector at');
+        drawVector(accelCtx, 0, 0, projA.x, projA.y, 'blue', 'Vector A', vectorA, scale);
+        drawVector(accelCtx, 0, 0, projV.x, projV.y, 'red', 'Vector V', vectorV, scale);
+        drawVector(accelCtx, 0, 0, projAt.x, projAt.y, 'green', 'Vector at', {x: atX, y: atY, z: atZ}, scale);
         
-        drawVector(accelCtx, projAt.x, projAt.y, projAt.x + projAn.x, projAt.y + projAn.y, 'purple', 'Vector an');
+        drawVector(accelCtx, projAt.x, projAt.y, projAt.x + projAn.x, projAt.y + projAn.y, 'purple', 'Vector an', {x: anX, y: anY, z: anZ}, scale);
         
         accelCtx.setTransform(1, 0, 0, 1, 0, 0);
     });
 
-    function drawVector(ctx, x1, y1, x2, y2, color, label) {
+    function drawVector(ctx, x1, y1, x2, y2, color, label, vector, scale) {
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
@@ -416,6 +420,54 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillStyle = color;
         ctx.font = '12px Arial';
         ctx.fillText(label, x2 + 15 * Math.cos(angle), y2 + 15 * Math.sin(angle));
+
+        if (vector.x !== 0 || vector.y !== 0 || vector.z !== 0) {
+            drawAngles(ctx, vector, scale, color);
+        }
+    }
+
+    function drawAngles(ctx, vector, scale, color) {
+        const magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+        if (magnitude === 0) return;
+
+        const cosAlpha = vector.x / magnitude;
+        const cosBeta = vector.y / magnitude;
+        const cosGamma = vector.z / magnitude;
+
+        const alpha = toDegrees(Math.acos(cosAlpha));
+        const beta = toDegrees(Math.acos(cosBeta));
+        const gamma = toDegrees(Math.acos(cosGamma));
+        
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.font = '10px Arial';
+
+        // Ángulo Alpha (con el eje X)
+        ctx.beginPath();
+        ctx.arc(0, 0, 20 * scale, 0, toRadians(alpha), vector.y < 0);
+        ctx.stroke();
+        ctx.fillText(`α: ${toSignificantFigures(alpha, 3)}°`, 20 * scale * Math.cos(toRadians(alpha) / 2) + 5, 20 * scale * Math.sin(toRadians(alpha) / 2) - 5);
+
+        // Ángulo Beta (con el eje Y)
+        ctx.beginPath();
+        ctx.arc(0, 0, 20 * scale, Math.PI/2, Math.PI/2 - toRadians(beta), vector.x < 0);
+        ctx.stroke();
+        ctx.fillText(`β: ${toSignificantFigures(beta, 3)}°`, -5 + 20 * scale * Math.cos(Math.PI/2 - toRadians(beta)/2), 5 + 20 * scale * Math.sin(Math.PI/2 - toRadians(beta)/2));
+
+        // Ángulo Gamma (con el eje Z)
+        ctx.beginPath();
+        const zProj = projectTo2D(0, 0, -1, scale);
+        const zArcAngle = Math.atan2(zProj.y, zProj.x);
+        const vecProj = projectTo2D(vector.x, vector.y, vector.z, scale);
+        const vecAngle = Math.atan2(vecProj.y, vecProj.x);
+
+        const radius = 30 * scale;
+        ctx.arc(0, 0, radius, Math.PI, Math.PI - toRadians(gamma) , vector.x + vector.y < 0); // Esto es una aproximación visual
+        ctx.stroke();
+        const midAngle = toRadians(gamma) / 2;
+        const labelX = -10 + radius * Math.cos(Math.PI - midAngle);
+        const labelY = radius * Math.sin(Math.PI - midAngle);
+        ctx.fillText(`γ: ${toSignificantFigures(gamma, 3)}°`, labelX, labelY);
     }
 
     function drawAxes(ctx, canvas, scale) {
@@ -440,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.stroke();
         ctx.fillText('Y', yPos.x, yPos.y + 10);
 
-        // Eje Z (el nuevo)
+        // Eje Z
         ctx.beginPath();
         const zPos = projectTo2D(0, 0, canvas.width / (4 * scale), scale);
         const zNeg = projectTo2D(0, 0, -canvas.width / (4 * scale), scale);
