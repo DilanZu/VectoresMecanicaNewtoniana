@@ -204,3 +204,25 @@ p {
 .trig-mode-selector label {
     margin-right: 15px;
 }
+
+/* NUEVA SECCIÓN: Estilos para pantallas pequeñas (móviles) */
+@media (max-width: 600px) {
+    .input-section {
+        flex-direction: column;
+        padding: 15px;
+    }
+    
+    .vector-input-group {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .input-mode-selector {
+        align-self: flex-start;
+        margin-top: 10px;
+    }
+
+    #calculate-btn, #calculate-accel-btn {
+        width: 100%;
+    }
+}
