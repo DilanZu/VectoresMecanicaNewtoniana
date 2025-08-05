@@ -157,14 +157,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return scale * 0.8; 
     }
 
-    // NUEVA FUNCION: Proyección de coordenadas 3D a 2D (isométrica simple)
     function projectTo2D(x, y, z, scale) {
-        const angle = Math.PI / 6; // Ángulo de proyección (30 grados)
+        const angle = Math.PI / 6;
         const cosAngle = Math.cos(angle);
         const sinAngle = Math.sin(angle);
         
         const xPrime = (x * cosAngle - z * cosAngle) * scale;
-        const yPrime = (y * cosAngle + x * sinAngle + z * sinAngle) * -1 * scale; // Y es negativo en el canvas
+        const yPrime = (y * cosAngle + x * sinAngle + z * sinAngle) * -1 * scale;
         
         return { x: xPrime, y: yPrime };
     }
@@ -268,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formattedMagnitudeSquared = toSignificantFigures(magnitudeTargetSquared, sigFigs);
         const formattedScalar = toSignificantFigures(scalar, sigFigs);
 
+        // AQUI ESTABA EL ERROR: las variables debían ser ${sourceLabel} y ${targetLabel}
         step1P.innerHTML = `Paso 1: Calcular el producto punto de ${sourceLabel} y ${targetLabel}.
             $$${sourceLabel} \\cdot ${targetLabel} = (${toSignificantFigures(sourceVector.x, sigFigs)})(${toSignificantFigures(targetVector.x, sigFigs)}) + (${toSignificantFigures(sourceVector.y, sigFigs)})(${toSignificantFigures(targetVector.y, sigFigs)}) + (${toSignificantFigures(sourceVector.z, sigFigs)})(${toSignificantFigures(targetVector.z, sigFigs)}) = ${formattedDotProduct}$$`;
         
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             $$||${targetLabel}||^2 = (${toSignificantFigures(targetVector.x, sigFigs)})^2 + (${toSignificantFigures(targetVector.y, sigFigs)})^2 + (${toSignificantFigures(targetVector.z, sigFigs)})^2 = ${formattedMagnitudeSquared}$$`;
 
         step3P.innerHTML = `Paso 3: Usar la fórmula para encontrar las coordenadas de la proyección.
-            $$\\text{proy}_{${targetLabel}}{${sourceVector}} = \\left(\\frac{${sourceLabel} \\cdot ${targetVector}}{||${targetVector}||^2}\\right) \\cdot ${targetVector} = \\left(\\frac{${formattedDotProduct}}{${formattedMagnitudeSquared}}\\right) \\cdot (${toSignificantFigures(targetVector.x, sigFigs)}, ${toSignificantFigures(targetVector.y, sigFigs)}, ${toSignificantFigures(targetVector.z, sigFigs)}) = (${formattedProjX}, ${formattedProjY}, ${formattedProjZ})$$`;
+            $$\\text{proy}_{${targetLabel}}{${sourceLabel}} = \\left(\\frac{${sourceLabel} \\cdot ${targetLabel}}{||${targetLabel}||^2}\\right) \\cdot ${targetLabel} = \\left(\\frac{${formattedDotProduct}}{${formattedMagnitudeSquared}}\\right) \\cdot (${toSignificantFigures(targetVector.x, sigFigs)}, ${toSignificantFigures(targetVector.y, sigFigs)}, ${toSignificantFigures(targetVector.z, sigFigs)}) = (${formattedProjX}, ${formattedProjY}, ${formattedProjZ})$$`;
 
         MathJax.typeset();
         
@@ -392,7 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
         drawVector(accelCtx, 0, 0, projV.x, projV.y, 'red', 'Vector V');
         drawVector(accelCtx, 0, 0, projAt.x, projAt.y, 'green', 'Vector at');
         
-        // El vector an se dibuja desde la punta de at para mostrar la suma de vectores
         drawVector(accelCtx, projAt.x, projAt.y, projAt.x + projAn.x, projAt.y + projAn.y, 'purple', 'Vector an');
         
         accelCtx.setTransform(1, 0, 0, 1, 0, 0);
